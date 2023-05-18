@@ -30,7 +30,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = SimpleAdapter(listaElementos)
+        adapter = SimpleAdapter()
+        adapter.submitList(listaElementos)
         binding.rvElements.adapter = adapter
 
 
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity() {
                     item.name.contains(newText, ignoreCase = true)
                 }
 
-                adapter.updateItems(filteredList)
+                adapter.submitList(filteredList)
 
                 return true
             }
