@@ -3,17 +3,23 @@ package com.developerscracks.searchviewactionbar
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import com.developerscracks.searchviewactionbar.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
+    private var mainMenu: Menu? = null
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: SimpleAdapter
 
-    val listaElementos = listOf(
+    private lateinit var filteredList: MutableList<Item>
+    private var newText: String = ""
+
+    val listaElementos = mutableListOf(
         Item("Facebook"),
         Item("Instagram"),
         Item("WhatApp"),
@@ -23,15 +29,17 @@ class MainActivity : AppCompatActivity() {
         Item("Telegram")
     )
 
-    private lateinit var arrayAdapter: ArrayAdapter<String?>
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = SimpleAdapter()
-        adapter.submitList(listaElementos)
+        filteredList = listaElementos
+
+        adapter = SimpleAdapter(filteredList){ show->
+            showDeleteMenu(show)
+        }
+
         binding.rvElements.adapter = adapter
 
 
@@ -39,7 +47,9 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_action_bar, menu)
+        mainMenu = menu
+        menuInflater.inflate(R.menu.menu_action_bar, mainMenu)
+        showDeleteMenu(false)
 
         val buscar = menu?.findItem(R.id.buscador)
         val searchView = buscar?.actionView as SearchView
@@ -50,15 +60,61 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onQueryTextChange(newText: String): Boolean {
-                val filteredList = listaElementos.filter { item ->
+                this@MainActivity.newText = newText
+                filteredList = listaElementos.filter { item ->
                     item.name.contains(newText, ignoreCase = true)
-                }
+                }.toMutableList()
 
-                adapter.submitList(filteredList)
+                adapter.updateItems(filteredList)
 
                 return true
             }
         })
         return true
+    }
+
+    fun showDeleteMenu(show:Boolean){
+        mainMenu?.findItem(R.id.borrar)?.isVisible = show
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.borrar -> {
+                delete()
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun delete() {
+        val alertDialog = AlertDialog.Builder(this)
+        alertDialog.setTitle("Eliminar")
+        alertDialog.setMessage("¿Quieres borrar los items?")
+        alertDialog.setPositiveButton("Borrar") { _, _ ->
+            val selectedIndices = adapter.getSelectedIndices()
+
+            val tempList = listaElementos.toMutableList() // Copia de la lista original
+
+            val newList = tempList.filterIndexed { index, _ ->
+                index !in selectedIndices
+            }
+
+            filteredList = newList.filter { item ->
+                item.name.contains(newText, ignoreCase = true)
+            }.toMutableList()
+
+            // Actualizar la lista original con la nueva lista
+            listaElementos.clear()
+            listaElementos.addAll(newList)
+
+            adapter.updateItems(filteredList)
+            adapter.notifyDataSetChanged()
+
+            showDeleteMenu(false)
+        }
+        alertDialog.setNegativeButton("Cancel") { _, _ ->
+
+        }
+        alertDialog.show()
     }
 }

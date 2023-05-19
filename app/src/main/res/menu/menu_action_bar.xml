@@ -7,4 +7,10 @@
         android:title="Buscador"
         app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
+
+    <item
+        android:id="@+id/borrar"
+        android:title="Borrar"
+        app:showAsAction="always"
+        android:icon="@drawable/baseline_delete_24"/>
 </menu>
